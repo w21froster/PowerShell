@@ -1,1 +1,0 @@
-﻿get-wmiobject Win32_Product | Format-Table IdentifyingNumber, Name, LocalPackage
