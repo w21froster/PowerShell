@@ -1,13 +1,5 @@
 # 1 - Install software
 
-# Source PoSh Dependencies
-. .\New-RandomPassword.ps1
-. .\NewMDTServer.ps1
-
-# Initialize Variables
-$InitPath = "$env:SystemDrive\DSCINIT\MDTISOs"
-$SecurePassword = (New-RandomPassword)
-
 # Install DSC Dependencies 
 Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 $DSCModules = "PowerShellModule","xPSDesiredStateConfiguration"
@@ -16,6 +8,14 @@ $DSCModules | ForEach-Object {
             Install-Module $_ -Verbose -Confirm:$false
     }
 }
+
+# Source PoSh Dependencies
+. .\New-RandomPassword.ps1
+. .\NewMDTServer.ps1
+
+# Initialize Variables
+$InitPath = "$env:SystemDrive\DSCINIT\MDTISOs"
+$SecurePassword = (New-RandomPassword)
 
 # Run DSC Configuration
 NewMDTServer -Servers localhost -OutputPath $InitPath -InitPath $InitPath
