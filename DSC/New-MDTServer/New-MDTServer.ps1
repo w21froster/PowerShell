@@ -163,7 +163,7 @@ Import-MDTTaskSequence -path "DS001:\Task Sequences\Server 2016" `
     -Comments "This task sequence will create a fully patched Server 2016 .WIM" `
     -ID "SRVR2016REF" `
     -Version "1.0" `
-    -OperatingSystemPath "DS001:\Operating Systems\ISO No Updates\Server2016.wim" `
+    -OperatingSystemPath "DS001:\Operating Systems\ISO No Updates\Windows Server 2016 SERVERDATACENTER in Windows Server 2016 install.wim" `
     -FullName "w21froster" `
     -OrgName "w21froster.GitHub.IO" `
     -HomePage "https://www.google.com/" `
