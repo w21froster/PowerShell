@@ -1,7 +1,12 @@
 # 1 - Install software
 
+# Source PoSh Dependencies
+. .\New-RandomPassword.ps1
+. .\NewMDTServer.ps1
+
 # Initialize Variables
 $InitPath = "$env:SystemDrive\DSCINIT\MDTISOs"
+$SecurePassword = (New-RandomPassword)
 
 # Install DSC Dependencies 
 Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
@@ -12,9 +17,11 @@ $DSCModules | ForEach-Object {
     }
 }
 
-.\NewMDTServer -Servers localhost -OutputPath $InitPath -InitPath $InitPath
+# Run DSC Configuration
+NewMDTServer -Servers localhost -OutputPath $InitPath -InitPath $InitPath
 Start-DscConfiguration -Path $InitPath -Wait -Verbose -Force
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # 2 - Configure MDT 
 
@@ -34,17 +41,17 @@ New-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -
 New-Item -Path "DS001:\Operating Systems" -enable "True" -Name "ISO No Updates" -Comments "This folder holds WIM files created from the ISOs. These have no Windows updates installed and no 3rd party software." -ItemType "folder" -Verbose
 Import-MdtOperatingSystem -Path "DS001:\Operating Systems\ISO No Updates" -SourcePath (($DriveLetter).DriveLetter + ":\") -DestinationFolder "Windows Server 2016" -Verbose
 
-# WinPE Settings
-@'
+# Configure WinPE Settings
+@"
 [Settings]
 Priority=Default
 Properties=MyCustomProperty
 
 [Default]
 ' // Credentials for connecting to network share
-UserID=
-UserDomain=
-UserPassword=
+UserID=mdt_sa
+UserDomain=$env:USERDOMAIN
+UserPassword=$SecurePassword
 
 ' // Wizard Pages
 SkipWizard=NO
@@ -124,11 +131,11 @@ SkipBDDWelcome=NO
 SkipAdminAccounts=NO
 ' // Administrators = 
 
-'@ | Out-File C:\DeploymentShare\Control\CustomSettings.ini -Encoding ASCII
+"@ | Out-File C:\DeploymentShare\Control\CustomSettings.ini -Encoding ASCII
 
 Update-MDTDeploymentShare -path "DS001:" -Verbose
 
-#region MDT Folders
+# Create MDT Folders
 
     New-Item -path "DS001:\Operating Systems" `
         -enable "True" `
@@ -148,7 +155,8 @@ Update-MDTDeploymentShare -path "DS001:" -Verbose
         -Comments "This is intended to hold the various task sequences for Windows 7 images" `
         -ItemType "folder" -Verbose
 
-        
+# Generate Task Sequence
+
 Import-MDTTaskSequence -path "DS001:\Task Sequences\Server 2016" `
     -Name "Server 2016 - Create Reference Image" `
     -Template "Client.xml" `
@@ -200,11 +208,9 @@ Function Enable-TaskSequenceStep
 
 @(
 
-    "Win7Update",
-    "Win81Update",
-    "Win10Update"
+    "SRVR2016REF"
 
-) | foreach {
+) | ForEach-Object {
                 Enable-TaskSequenceStep -TaskSequenceID $_ `
                     -GroupName "StateRestore" `
                     -StepName "Windows Update (Pre-Application Installation)" `
@@ -215,8 +221,5 @@ Function Enable-TaskSequenceStep
                     -StepName "Windows Update (Post-Application Installation)" `
                     -Verbose
             }
-
-
-#endregion
 
 
